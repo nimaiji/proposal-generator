@@ -1,0 +1,28 @@
+# Python-specific ignores
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+.env/
+
+# Dependency management
+pip-log.txt
+pip-wheel-metadata/
+
+# IDE specific files
+.vscode/
+.idea/
+
+# Compiled Python files
+*.pyc
+
+# Miscellaneous
+.DS_Store
+*.txt
+*.csv
+*.json
+*.pickle
+*.pkl
+*.xlsx
+*.log
