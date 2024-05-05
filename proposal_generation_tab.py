@@ -8,15 +8,21 @@ from gpt4all import GPT4All
 from langchain_core.prompts import PromptTemplate
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-def get_falcon_template():
-    template = """### Instruction: {target} describe their business with these sentences: {target_services} \n\n
-    This is how {our} describe our services: {our_services} \n\n
-    Based on collected information. write a business proposal that how {our} services can help {target}'s business.
-    Also, you must proofread the whole proposal before sending it to the client.
-    You must use estimations and facts to make your proposal more convincing.
-    It must be at least 6000 words long.
-
-    ### Response: {section}: \n"""
+def get_falcon_template(idx):
+    if idx == 0:
+        template = """### USER: {target} describe their business with these sentences: {target_services} \n\n
+        This is how {our} describe their services: {our_services} \n\n
+        You must write a business proposal that convince {target} use {our}'s services.
+        Also, you must proofread the whole business proposal.
+        You must use estimations and facts to make your proposal more convincing.
+        You must write only one paragraph.
+        Do not write conclusion.
+    
+        ### Response: {section}: \n"""
+    else:
+        template = """### USER: write next section\n\n
+    
+        ### Response: {section}: \n"""
 
     return template
 
@@ -44,9 +50,9 @@ def get_mistral_template():
 
 
 models = [
-    {'path': './LLM/mistral-7b-openorca.gguf2.Q4_0.gguf', 'template': get_mistral_template()},
-    {'path': './LLM/gpt4all-falcon-newbpe-q4_0.gguf', 'template': get_falcon_template()},
-    {'path': './LLM/Meta-Llama-3-8B-Instruct.Q4_0.gguf', 'template': get_llama_template()}
+    {'path': './LLM/mistral-7b-openorca.gguf2.Q4_0.gguf'},
+    {'path': './LLM/gpt4all-falcon-newbpe-q4_0.gguf'},
+    {'path': './LLM/Meta-Llama-3-8B-Instruct.Q4_0.gguf'}
 ]
 
 model = models[1]
@@ -62,27 +68,24 @@ def get_services(input_data):
     return services['Text'].tolist()[50:]
 
 
-def generate_proposal(input_data, section):
+def generate_proposal(input_data, sections, our, our_services):
     services = get_services(input_data)
     target_services = ' '
     for service in services:
         target_services += service + '\n'
     target = 'Edinburgh Napier University'
-    our = 'SmartVision'
-    our_services = """
-    SmartVision is an innovative online meeting platform company that revolutionizes virtual collaboration. With its cutting-edge 
-    technology, SmartVision offers a seamless and intuitive platform for businesses and individuals to connect, communicate, and 
-    collaborate remotely. Whether it's team meetings, client presentations, or virtual conferences, SmartVision provides a
-    comprehensive suite of features, including high-definition video conferencing, screen sharing, real-time messaging, and 
-    advanced security protocols, ensuring a secure and productive virtual environment for all users. With a user-friendly interface
-    and customizable options, SmartVision empowers organizations to enhance productivity, streamline communication, and foster meaningful 
-    connections in the digital age.
-    """
 
+    result = ''
     with llm.chat_session():
-        response1 = llm.generate(prompt=get_falcon_template().format(target=target, our=our,
-         target_services=target_services, our_services=our_services, section=section), temp=0, max_tokens=6000)
-        return llm.current_chat_session
+        for idx, section in enumerate(sections):
+            if idx == 0:
+                pmp = get_falcon_template(idx).format(target=target, our=our,
+             target_services=target_services, our_services=our_services, section=section)
+            else:
+                pmp = get_falcon_template(idx).format(section=section)
+            response = llm.generate(prompt=pmp, temp=0.5, max_tokens=2000)
+            result += response + '\n\n'
+    return result
     # prompt = PromptTemplate.from_template(model['template'])
     # llm_chain = LLMChain(prompt=prompt, llm=llm)
     # args_dict = {
@@ -95,21 +98,20 @@ def generate_proposal(input_data, section):
     # return llm_chain.invoke(args_dict)
 
 def show_proposal_generation_tab():
-    st.title("Proposal Generation")
-    st.write("This is the Proposal Generation tab.")
-    st.write("You can call your proposal generation script here.")
+    st.header("Proposal Generation")
+    our = st.text_input("Enter your company name:", "SmartVision")
+    our_services_tmp = "SmartVision is an innovative online meeting platform company that revolutionizes virtual collaboration. With its cutting-edge technology, SmartVision offers a seamless and intuitive platform for businesses and individuals to connect, communicate, and collaborate remotely. Whether it's team meetings, client presentations, or virtual conferences, SmartVision provides acomprehensive suite of features, including high-definition video conferencing, screen sharing, real-time messaging, and advanced security protocols, ensuring a secure and productive virtual environment for all users. With a user-friendly interfaceand customizable options, SmartVision empowers organizations to enhance productivity, streamline communication, and foster meaningful connections in the digital age."
+    our_services = st.text_area("Enter your company services:", our_services_tmp)
 
     input_data = st.text_input("Enter input data file path:", "./output.pickle")
     output_file = st.text_input("Enter output proposal file path:", "./output_proposal.pdf")
 
     if st.button("Generate Proposal"):
         if input_data:
-            # sections = ['Introduction', 'Our Services for You', 'Investment Appraisal', 'Analytics', 'Conclusion']
-            # for section in sections:
-            #     res = generate_proposal(input_data, section)
-            #     st.write(res)
-
-            res = generate_proposal(input_data, 'section')
+            sections = ['Introduction', 'Context about the industry and market', 'Relevant trends or challenges',
+                        'Timeline for completion', 'Benefits the company will gain from using services',
+                        'Quantify any potential cost savings, efficiency improvements, or revenue increases']
+            res = generate_proposal(input_data, sections, our, our_services)
             st.write(res)
         else:
             st.error("Please provide the input data file path.")

@@ -18,7 +18,7 @@ def call_text_classification_script(folder_path, output_excel, output_pickle):
         st.error(f"Error executing service extraction script: {e}")
 
 def show_service_extraction_tab():
-    st.title("Service Extraction")
+    st.header("Service Extraction")
     st.write("This is the Service Extraction tab.")
     st.write("You can call your service extraction script here.")
 

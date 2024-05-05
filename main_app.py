@@ -11,11 +11,11 @@ def main():
     if 'selected_tab' not in st.session_state:
         st.session_state.selected_tab = "Home"
 
-    home_tab_button = st.sidebar.button("Home")
-    crawler_tab_button = st.sidebar.button("Web Crawler")
-    data_preprocess_tab_button = st.sidebar.button("Data Pre-process")
-    service_extraction_tab_button = st.sidebar.button("Service Extraction")
-    proposal_generation_tab_button = st.sidebar.button("Proposal Generation")
+    home_tab_button = st.sidebar.button("🏠 Home")
+    crawler_tab_button = st.sidebar.button("🕸️ Web Crawler")
+    service_extraction_tab_button = st.sidebar.button("🔧 Service Extraction")
+    proposal_generation_tab_button = st.sidebar.button("📄 Proposal Generation")
+    data_preprocess_tab_button = st.sidebar.button("🔍 Data Pre-process")
 
     if home_tab_button:
         st.session_state.selected_tab = "Home"

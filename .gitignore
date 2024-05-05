@@ -26,3 +26,5 @@ pip-wheel-metadata/
 *.pkl
 *.xlsx
 *.log
+
+!requirements.txt
